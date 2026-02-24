@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+env/
+venv/
+.venv/
+build/
+dist/
+*.egg-info/
+
+# .NET / C#
+[Oo]bj/
+[Bb]in/
+.vs/
+*.user
+*.sln.docstates
+*.suo
+appsettings.Development.json
+appsettings.Local.json
+
+# Node.js / React (Client)
+node_modules/
+npm-debug.log*
+yarn-error.log*
+dist/
+build/
+.env
+.env.local
+
+# Data / CSV Files
+*.csv
+*.xlsx
+*.db
+*.sqlite3
+RecommendaditonEngine/data/raw/
+RecommendaditonEngine/data/processed/
+
+# OS / Tooling
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
