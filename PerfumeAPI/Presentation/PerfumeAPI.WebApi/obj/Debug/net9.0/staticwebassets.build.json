@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "kJ9C0fenKBq7qRIME/79w04aNV+xXQmcjkDeEPF0Xuo=",
+  "Source": "PerfumeAPI.WebApi",
+  "BasePath": "_content/PerfumeAPI.WebApi",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}

@@ -1,0 +1,16 @@
+C:\Users\Ozan\Desktop\perfume\PerfumeAPI\Core\PerfumeAPI.Application\bin\Debug\net9.0\PerfumeAPI.Application.deps.json
+C:\Users\Ozan\Desktop\perfume\PerfumeAPI\Core\PerfumeAPI.Application\bin\Debug\net9.0\PerfumeAPI.Application.dll
+C:\Users\Ozan\Desktop\perfume\PerfumeAPI\Core\PerfumeAPI.Application\bin\Debug\net9.0\PerfumeAPI.Application.pdb
+C:\Users\Ozan\Desktop\perfume\PerfumeAPI\Core\PerfumeAPI.Application\bin\Debug\net9.0\PerfumeAPI.Domain.dll
+C:\Users\Ozan\Desktop\perfume\PerfumeAPI\Core\PerfumeAPI.Application\bin\Debug\net9.0\PerfumeAPI.Domain.pdb
+C:\Users\Ozan\Desktop\perfume\PerfumeAPI\Core\PerfumeAPI.Application\obj\Debug\net9.0\PerfumeAPI.Application.csproj.AssemblyReference.cache
+C:\Users\Ozan\Desktop\perfume\PerfumeAPI\Core\PerfumeAPI.Application\obj\Debug\net9.0\PerfumeAPI.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Ozan\Desktop\perfume\PerfumeAPI\Core\PerfumeAPI.Application\obj\Debug\net9.0\PerfumeAPI.Application.AssemblyInfoInputs.cache
+C:\Users\Ozan\Desktop\perfume\PerfumeAPI\Core\PerfumeAPI.Application\obj\Debug\net9.0\PerfumeAPI.Application.AssemblyInfo.cs
+C:\Users\Ozan\Desktop\perfume\PerfumeAPI\Core\PerfumeAPI.Application\obj\Debug\net9.0\PerfumeAPI.Application.csproj.CoreCompileInputs.cache
+C:\Users\Ozan\Desktop\perfume\PerfumeAPI\Core\PerfumeAPI.Application\obj\Debug\net9.0\PerfumeAPI.Application.sourcelink.json
+C:\Users\Ozan\Desktop\perfume\PerfumeAPI\Core\PerfumeAPI.Application\obj\Debug\net9.0\PerfumeA.5DB8E833.Up2Date
+C:\Users\Ozan\Desktop\perfume\PerfumeAPI\Core\PerfumeAPI.Application\obj\Debug\net9.0\PerfumeAPI.Application.dll
+C:\Users\Ozan\Desktop\perfume\PerfumeAPI\Core\PerfumeAPI.Application\obj\Debug\net9.0\refint\PerfumeAPI.Application.dll
+C:\Users\Ozan\Desktop\perfume\PerfumeAPI\Core\PerfumeAPI.Application\obj\Debug\net9.0\PerfumeAPI.Application.pdb
+C:\Users\Ozan\Desktop\perfume\PerfumeAPI\Core\PerfumeAPI.Application\obj\Debug\net9.0\ref\PerfumeAPI.Application.dll

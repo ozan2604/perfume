@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\buildMultiTargeting\PerfumeAPI.WebApi.props" />
+</Project>

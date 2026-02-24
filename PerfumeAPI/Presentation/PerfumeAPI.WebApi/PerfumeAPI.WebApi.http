@@ -1,0 +1,6 @@
+@PerfumeAPI.WebApi_HostAddress = http://localhost:5016
+
+GET {{PerfumeAPI.WebApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
