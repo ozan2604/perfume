@@ -104,3 +104,8 @@ class FeatureEngineeringPipeline:
         print(f"Final Embedding Dimension: {final_embeddings.shape}")
         
         return final_embeddings
+
+        # 5. Dimensionality Reduction to D
+        # If the number of columns is less than D, we just return the concatenated features (or padded)
+        # But usually brand one-hot makes it > 500
+        
