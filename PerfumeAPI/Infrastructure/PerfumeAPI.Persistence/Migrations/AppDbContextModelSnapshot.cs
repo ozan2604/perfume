@@ -309,6 +309,34 @@ namespace PerfumeAPI.Persistence.Migrations
                     b.ToTable("Perfumes");
                 });
 
+            modelBuilder.Entity("PerfumeAPI.Domain.Entities.UserPerfumeInteraction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("InteractionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsLiked")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("PerfumeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PerfumeId");
+
+                    b.HasIndex("UserId", "PerfumeId")
+                        .IsUnique();
+
+                    b.ToTable("UserPerfumeInteractions");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("PerfumeAPI.Domain.Entities.Identity.AppRole", null)
@@ -358,6 +386,25 @@ namespace PerfumeAPI.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("PerfumeAPI.Domain.Entities.UserPerfumeInteraction", b =>
+                {
+                    b.HasOne("PerfumeAPI.Domain.Entities.Perfume", "Perfume")
+                        .WithMany()
+                        .HasForeignKey("PerfumeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PerfumeAPI.Domain.Entities.Identity.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Perfume");
+
+                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }
