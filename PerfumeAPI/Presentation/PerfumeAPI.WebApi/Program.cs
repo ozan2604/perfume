@@ -9,6 +9,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 
 builder.Services.AddPersistenceServices(builder.Configuration);
+builder.Services.AddScoped<PerfumeAPI.WebApi.Services.RecommendationService>();
+builder.Services.AddControllers();
+
 
 builder.Services.AddAuthentication(options =>
 {
@@ -62,6 +65,9 @@ app.MapGet("/weatherforecast", () =>
     return forecast;
 })
 .WithName("GetWeatherForecast");
+
+app.MapControllers();
+
 
 app.Run();
 
