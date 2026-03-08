@@ -81,7 +81,7 @@ class FeatureEngineeringPipeline:
         print("Building weighted accords...")
         accord_matrix = self._weighted_accord_binarization(df)
 
-        # 4) Concatenate
+        # 4) Concatenate  -->  gender , year, country bunlar hep filtreleme kısmında ele alınıcak.
         concatenated_features = np.hstack((accord_matrix, brand_encoded, numerical_scaled))
         print(f"Raw feature dimension size (before SVD): {concatenated_features.shape[1]}")
 

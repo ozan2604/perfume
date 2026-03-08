@@ -76,7 +76,6 @@ public class PerfumesController : ControllerBase
     }
 
     [HttpGet("recommendations")]
-    [Authorize]
     public async Task<IActionResult> GetRecommendations(int count = 10)
     {
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
