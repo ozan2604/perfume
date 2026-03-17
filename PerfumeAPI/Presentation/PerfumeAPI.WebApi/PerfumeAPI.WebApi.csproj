@@ -21,4 +21,6 @@
     <ProjectReference Include="..\..\Infrastructure\PerfumeAPI.Persistence\PerfumeAPI.Persistence.csproj" />
   </ItemGroup>
 
+  <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JsonSchema="https://www.schemastore.org/appveyor.json" /></VisualStudio></ProjectExtensions>
+
 </Project>
