@@ -75,6 +75,53 @@ public class PerfumesController : ControllerBase
         return Ok(new { Message = "Interaction recorded and profile updated." });
     }
 
+    [HttpPost("interact-bulk")]
+    [Authorize]
+    public async Task<IActionResult> InteractBulk([FromBody] List<InteractionRequest> requests)
+    {
+        if (requests == null || !requests.Any())
+            return BadRequest("No interactions provided.");
+
+        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+        
+        var userId = Guid.Parse(userIdString);
+        
+        var perfumeIds = requests.Select(r => r.PerfumeId).ToList();
+        
+        var existingInteractions = await _context.UserPerfumeInteractions
+            .Where(i => i.UserId == userId && perfumeIds.Contains(i.PerfumeId))
+            .ToListAsync();
+
+        foreach (var request in requests)
+        {
+            var existing = existingInteractions.FirstOrDefault(i => i.PerfumeId == request.PerfumeId);
+            if (existing != null)
+            {
+                existing.IsLiked = request.IsLiked;
+                existing.InteractionDate = DateTime.UtcNow;
+            }
+            else
+            {
+                _context.UserPerfumeInteractions.Add(new UserPerfumeInteraction
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    PerfumeId = request.PerfumeId,
+                    IsLiked = request.IsLiked,
+                    InteractionDate = DateTime.UtcNow
+                });
+            }
+        }
+
+        await _context.SaveChangesAsync();
+        
+        // Trigger background user vector update
+        await _recommendationService.UpdateUserVectorAsync(userId);
+
+        return Ok(new { Message = $"{requests.Count} interactions recorded and profile updated." });
+    }
+
     [HttpGet("recommendations")]
     public async Task<IActionResult> GetRecommendations(int count = 10)
     {
