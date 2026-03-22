@@ -122,6 +122,37 @@ public class PerfumesController : ControllerBase
         return Ok(new { Message = $"{requests.Count} interactions recorded and profile updated." });
     }
 
+    [HttpGet("interactions")]
+    [Authorize]
+    public async Task<IActionResult> GetInteractions()
+    {
+        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+
+        var userId = Guid.Parse(userIdString);
+        var interactions = await _context.UserPerfumeInteractions
+            .Where(i => i.UserId == userId)
+            .Select(i => new { perfumeId = i.PerfumeId.ToString(), isLiked = i.IsLiked })
+            .ToListAsync();
+
+        // Return as dictionary: { "perfumeId": true/false }
+        var dict = interactions.ToDictionary(i => i.perfumeId, i => i.isLiked);
+        return Ok(dict);
+    }
+
+    [HttpGet("interactions/count")]
+    [Authorize]
+    public async Task<IActionResult> GetInteractionCount()
+    {
+        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+
+        var userId = Guid.Parse(userIdString);
+        var count = await _context.UserPerfumeInteractions.CountAsync(i => i.UserId == userId);
+
+        return Ok(new { Count = count });
+    }
+
     [HttpGet("recommendations")]
     public async Task<IActionResult> GetRecommendations(int count = 10)
     {

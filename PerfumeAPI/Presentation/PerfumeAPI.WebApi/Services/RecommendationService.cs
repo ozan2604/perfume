@@ -40,18 +40,18 @@ public class RecommendationService
 
         if (!likedVectors.Any() && !dislikedVectors.Any()) return;
 
-        float[] resultVector = new float[100]; // Assuming 100 dimensions from Python SVD
+        float[] resultVector = new float[256]; // Assuming 256 dimensions from Python SVD
 
         if (likedVectors.Any())
         {
             float[] avgLiked = CalculateAverage(likedVectors);
-            for (int i = 0; i < 100; i++) resultVector[i] += avgLiked[i];
+            for (int i = 0; i < 256; i++) resultVector[i] += avgLiked[i];
         }
 
         if (dislikedVectors.Any())
         {
             float[] avgDisliked = CalculateAverage(dislikedVectors);
-            for (int i = 0; i < 100; i++) resultVector[i] -= avgDisliked[i] * 0.5f; // Penalty weight
+            for (int i = 0; i < 256; i++) resultVector[i] -= avgDisliked[i] * 0.5f; // Penalty weight
         }
 
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);

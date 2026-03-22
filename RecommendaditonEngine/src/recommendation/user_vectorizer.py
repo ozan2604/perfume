@@ -45,8 +45,8 @@ class UserVectorizer:
                         disliked_vectors.append(vec)
 
             # 2. Vektör Hesaplama (Ağırlıklı Ortalama)
-            # Default olarak 100 boyutlu boş vektör (projenin standart d_dimensions değeri)
-            user_vector = np.zeros(100, dtype=np.float32)
+            # Default olarak 256 boyutlu boş vektör (projenin standart d_dimensions değeri)
+            user_vector = np.zeros(256, dtype=np.float32)
 
             if liked_vectors:
                 # Beğenilenlerin ortalamasını al (Pozitif Etki)
