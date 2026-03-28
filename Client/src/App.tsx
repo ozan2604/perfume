@@ -5,6 +5,7 @@ import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import RecommendationsPage from './pages/RecommendationsPage';
+import InteractionsPage from './pages/InteractionsPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import './index.css';
 
@@ -21,6 +22,7 @@ const App: React.FC = () => {
             <Route element={<ProtectedRoute />}>
               <Route path="/" element={<HomePage />} />
               <Route path="/recommendations" element={<RecommendationsPage />} />
+              <Route path="/interactions" element={<InteractionsPage />} />
             </Route>
           </Routes>
         </main>

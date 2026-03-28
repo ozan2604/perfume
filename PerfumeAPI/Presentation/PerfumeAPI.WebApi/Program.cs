@@ -9,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 
 builder.Services.AddPersistenceServices(builder.Configuration);
+builder.Services.AddMemoryCache(); // RAM Caching for Vectors
 builder.Services.AddScoped<PerfumeAPI.WebApi.Services.RecommendationService>();
 builder.Services.AddControllers();
 

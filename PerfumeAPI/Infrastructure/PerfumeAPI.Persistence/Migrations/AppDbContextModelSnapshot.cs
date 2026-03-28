@@ -327,8 +327,20 @@ namespace PerfumeAPI.Persistence.Migrations
                     b.Property<Guid>("PerfumeId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("PerfumeName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserEmail")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("UserName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserSurname")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 

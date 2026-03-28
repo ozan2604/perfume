@@ -4,7 +4,7 @@ from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
 from sklearn.decomposition import TruncatedSVD
 
 class FeatureEngineeringPipeline:
-    def __init__(self, d_dimensions=100):
+    def __init__(self, d_dimensions=256):
         self.d_dimensions = d_dimensions
         self.brand_encoder = OneHotEncoder(sparse_output=False, handle_unknown='ignore')
         self.scaler = MinMaxScaler()

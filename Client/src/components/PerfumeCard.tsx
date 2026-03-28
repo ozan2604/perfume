@@ -4,11 +4,18 @@ import type { Perfume } from '../api/client';
 
 interface PerfumeCardProps {
   perfume: Perfume;
+  initialLiked?: boolean | null;
 }
 
-const PerfumeCard: React.FC<PerfumeCardProps> = ({ perfume }) => {
-  const [liked, setLiked] = useState<boolean | null>(null);
-  const [loading, setLoading] = useState(false);
+const PerfumeCard: React.FC<PerfumeCardProps> = ({ perfume, initialLiked = null }) => {
+  const [liked, setLiked] = React.useState<boolean | null>(initialLiked ?? null);
+  const [loading, setLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    if (initialLiked !== undefined) {
+      setLiked(initialLiked);
+    }
+  }, [initialLiked]);
 
   const handleInteract = async (isLiked: boolean) => {
     setLoading(true);
@@ -33,21 +40,29 @@ const PerfumeCard: React.FC<PerfumeCardProps> = ({ perfume }) => {
           {perfume.rating && <span className="rating">⭐ {perfume.rating}</span>}
         </div>
       </div>
-      <div className="perfume-actions">
-        <button 
-          onClick={() => handleInteract(true)} 
-          disabled={loading || liked === true}
-          className={`action-btn like ${liked === true ? 'active' : ''}`}
-        >
-          ❤️ {liked === true ? 'Beğenildi' : 'Beğen'}
-        </button>
-        <button 
-          onClick={() => handleInteract(false)} 
-          disabled={loading || liked === false}
-          className={`action-btn dislike ${liked === false ? 'active' : ''}`}
-        >
-          👎 {liked === false ? 'Beğenilmedi' : 'Beğenme'}
-        </button>
+      <div className="perfume-actions-container">
+        <div className="perfume-actions">
+          <button 
+            onClick={() => handleInteract(true)} 
+            disabled={loading || liked === true}
+            className={`action-btn like ${liked === true ? 'active' : ''}`}
+          >
+            ❤️ {liked === true ? 'Beğenildi' : 'Beğen'}
+          </button>
+          <button 
+            onClick={() => handleInteract(false)} 
+            disabled={loading || liked === false}
+            className={`action-btn dislike ${liked === false ? 'active' : ''}`}
+          >
+            👎 {liked === false ? 'Beğenilmedi' : 'Beğenme'}
+          </button>
+        </div>
+        
+        {perfume.url && (
+          <a href={perfume.url} target="_blank" rel="noopener noreferrer" className="perfume-link">
+            🔗 Ürünü İncele
+          </a>
+        )}
       </div>
     </div>
   );

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { getPerfumes } from '../api/client';
+import { getPerfumes, getInteractions } from '../api/client';
 import type { Perfume } from '../api/client';
 import PerfumeCard from '../components/PerfumeCard';
 
 const HomePage: React.FC = () => {
   const [perfumes, setPerfumes] = useState<Perfume[]>([]);
+  const [interactions, setInteractions] = useState<Record<string, boolean>>({});
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
@@ -15,8 +16,22 @@ const HomePage: React.FC = () => {
   const fetchPerfumes = async () => {
     setLoading(true);
     try {
-      const response = await getPerfumes(page);
-      setPerfumes(response.data);
+      const perfumesRes = await getPerfumes(page);
+      setPerfumes(perfumesRes.data);
+
+      try {
+        const interactionsRes = await getInteractions();
+        const normalized: Record<string, boolean> = {};
+        if (interactionsRes.data) {
+          Object.keys(interactionsRes.data).forEach(k => {
+            normalized[k.toLowerCase()] = interactionsRes.data[k];
+          });
+        }
+        setInteractions(normalized);
+      } catch (intErr) {
+        // Eğer kullanıcı giriş yapmamışsa 401 dönebilir, sorun yok.
+        console.warn('Etkileşimler çekilemedi (Belki de misafir kullanıcı)');
+      }
     } catch (error) {
       console.error('Parfüm yükleme hatası:', error);
     } finally {
@@ -37,7 +52,11 @@ const HomePage: React.FC = () => {
         <>
           <div className="perfume-grid">
             {perfumes.map((perfume) => (
-              <PerfumeCard key={perfume.id} perfume={perfume} />
+              <PerfumeCard 
+                key={perfume.id} 
+                perfume={perfume} 
+                initialLiked={interactions[perfume.id?.toLowerCase()]} 
+              />
             ))}
           </div>
           <div className="pagination">

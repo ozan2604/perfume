@@ -1,15 +1,17 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
 const Navbar: React.FC = () => {
   const { token, name, logout } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
+
+  const isActive = (path: string) => location.pathname === path ? 'active' : '';
 
   return (
     <nav className="navbar">
@@ -20,15 +22,16 @@ const Navbar: React.FC = () => {
         <div className="navbar-links">
           {token ? (
             <>
-              <Link to="/" className="navbar-link">Ana Sayfa</Link>
-              <Link to="/recommendations" className="navbar-link">Sana Özel</Link>
+              <Link to="/" className={`navbar-link ${isActive('/')}`}>Ana Sayfa</Link>
+              <Link to="/recommendations" className={`navbar-link ${isActive('/recommendations')}`}>Sana Özel</Link>
+              <Link to="/interactions" className={`navbar-link ${isActive('/interactions')}`}>Etkileşimlerim</Link>
               <span className="navbar-user">Selam, {name}</span>
               <button onClick={handleLogout} className="navbar-button">Çıkış Yap</button>
             </>
           ) : (
             <>
-              <Link to="/login" className="navbar-link">Giriş Yap</Link>
-              <Link to="/register" className="navbar-link">Kayıt Ol</Link>
+              <Link to="/login" className={`navbar-link ${isActive('/login')}`}>Giriş Yap</Link>
+              <Link to="/register" className={`navbar-link ${isActive('/register')}`}>Kayıt Ol</Link>
             </>
           )}
         </div>

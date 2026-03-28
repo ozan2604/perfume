@@ -74,11 +74,20 @@ body {
   color: var(--text-muted);
   text-decoration: none;
   font-weight: 400;
-  transition: color 0.2s;
+  transition: all 0.2s;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
 }
 
 .navbar-link:hover {
   color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.navbar-link.active {
+  color: var(--primary);
+  background: rgba(124, 58, 237, 0.15);
+  font-weight: 600;
 }
 
 .navbar-user {
@@ -308,4 +317,54 @@ body {
 .empty-state {
   text-align: center;
   padding: 4rem;
+}
+
+/* Tabs */
+.tabs-container {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+.tab-button {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 0.75rem 2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.tab-button:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+}
+
+.tab-button.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.perfume-link {
+  display: block;
+  text-align: center;
+  margin-top: 1rem;
+  color: var(--primary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.5rem;
+  background: rgba(124, 58, 237, 0.1);
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.perfume-link:hover {
+  background: var(--primary);
+  color: white;
 }

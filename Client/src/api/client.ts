@@ -27,6 +27,9 @@ export const getPerfumes = (page = 1, pageSize = 20) =>
 export const getRecommendations = (count = 10) =>
   api.get<Perfume[]>(`/perfumes/recommendations?count=${count}`);
 
+export const getInteractions = () =>
+  api.get<Record<string, boolean>>('/perfumes/interactions');
+
 export const interact = (perfumeId: string, isLiked: boolean) =>
   api.post('/perfumes/interact', { perfumeId, isLiked });
 
@@ -38,4 +41,14 @@ export interface Perfume {
   rating?: number;
   year?: number;
   country?: string;
+  url?: string;
 }
+
+export interface MyInteraction {
+  perfume: Perfume;
+  isLiked: boolean;
+  interactionDate: string;
+}
+
+export const getMyInteractions = () =>
+  api.get<MyInteraction[]>('/perfumes/my-interactions');

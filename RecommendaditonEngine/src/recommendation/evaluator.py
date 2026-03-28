@@ -54,7 +54,7 @@ class RecommenderEvaluator:
             return 0.0
         return dot / (norm_a * norm_b)
 
-    def evaluate(self, top_k=10, min_liked_interactions=5, penalty_weight=0.5):
+    def evaluate(self, threshold=0.1, min_total_interactions=10, penalty_weight=0.5):
         precisions = []
         recalls = []
         f1_scores = []
@@ -66,7 +66,7 @@ class RecommenderEvaluator:
             disliked_perfumes = [i['PerfumeId'] for i in interactions if not i['IsLiked']]
 
             # Model değerlendirmesi yapabilmek için kullanıcının yeterince beğendiği parfüm olması gerek
-            if len(liked_perfumes) < min_liked_interactions:
+            if (len(liked_perfumes) + len(disliked_perfumes)) < min_total_interactions:
                 continue
 
             valid_users += 1
@@ -75,13 +75,26 @@ class RecommenderEvaluator:
             random.Random(42).shuffle(liked_perfumes)
             split_idx = int(len(liked_perfumes) * 0.8)
             train_liked = liked_perfumes[:split_idx]
-            test_liked = set(liked_perfumes[split_idx:])
+            test_liked = liked_perfumes[split_idx:]
 
             if len(test_liked) == 0:
                 continue
 
-            # Disliked öğelerin hepsi train setinde kalsın (öneri yaparken tecrübe olsun diye)
-            train_disliked = disliked_perfumes
+            # Beğenilmeyenlerin de %80'i Train, %20'si Test
+            random.Random(42).shuffle(disliked_perfumes)
+            dis_split_idx = int(len(disliked_perfumes) * 0.8)
+            train_disliked = disliked_perfumes[:dis_split_idx]
+            test_disliked = disliked_perfumes[dis_split_idx:]
+
+            # Negatif sampling uygulanmazsa her önümüze gelen parfümü beğenmiş gibi davranır. 
+            # Classification probleminde modelin "hayır/beğenmez" demesi gereken test verileri olmalıdır.
+            # Eğer test_disliked tamamen boş ise Precision 1 çıkar. Modelin hata payı ölçülemez.
+            # Bu durumu çözmek için hiç etkileşime girilmemiş rastgele parfümleri negatif test verisi yapıyoruz.
+            if len(test_disliked) == 0:
+                interacted = set(liked_perfumes).union(set(disliked_perfumes))
+                unseen = [pid for pid in self.perfume_vectors.keys() if pid not in interacted]
+                # Test'teki pozitif sayısı kadar negatif (unseen) seçiyoruz
+                test_disliked = random.Random(42).sample(unseen, min(len(test_liked), len(unseen)))
 
             # --- USER VECTOR HESAPLAMASI ---
             train_liked_vecs = [self.perfume_vectors[pid] for pid in train_liked]
@@ -93,46 +106,52 @@ class RecommenderEvaluator:
             if train_disliked_vecs:
                 user_vector -= np.mean(train_disliked_vecs, axis=0) * penalty_weight
 
-            # --- KOSİNÜS BENZERLİĞİ VE RECOMMENDATION (ÖNERİ OLUŞTURMA) ---
-            # Train verisinde gördüğü şeyleri bir daha önermesin (Zaten etkileşimde bulunulmuş)
-            train_interacted = set(train_liked).union(set(train_disliked))
-            
-            candidates = []
-            for pid, vec in self.perfume_vectors.items():
-                if pid not in train_interacted:
-                    sim = self._cosine_similarity(user_vector, vec)
-                    candidates.append((pid, sim))
+            # --- KOSİNÜS BENZERLİĞİ VE CLASSIFICATION DEĞERLENDİRMESİ ---
+            tp = 0 # True Positive: Gerçekte Beğenildi, Model Beğenildi tahmini yaptı
+            fp = 0 # False Positive: Gerçekte Beğenilmedi, Model Beğenildi tahmini yaptı
+            tn = 0 # True Negative: Gerçekte Beğenilmedi, Model Beğenilmedi tahmini yaptı
+            fn = 0 # False Negative: Gerçekte Beğenildi, Model Beğenilmedi tahmini yaptı
 
-            # En yüksek benzerliği olan K tane aday parfümü seç
-            candidates.sort(key=lambda x: x[1], reverse=True)
-            top_k_recommendations = set([c[0] for c in candidates[:top_k]])
+            # Liked Test items
+            for pid in test_liked:
+                vec = self.perfume_vectors[pid]
+                sim = self._cosine_similarity(user_vector, vec)
+                if sim >= threshold:
+                    tp += 1
+                else:
+                    fn += 1
 
-            # --- METRİKLER (Precision, Recall, F1) ---
-            true_positives = len(top_k_recommendations.intersection(test_liked)) # Testtekilerden kaçını doğru bildik?
-            
-            precision = true_positives / top_k
-            recall = true_positives / len(test_liked)
-            f1 = 0
-            if (precision + recall) > 0:
-                f1 = 2 * (precision * recall) / (precision + recall)
+            # Disliked Test items
+            for pid in test_disliked:
+                vec = self.perfume_vectors[pid]
+                sim = self._cosine_similarity(user_vector, vec)
+                if sim >= threshold:
+                    fp += 1
+                else:
+                    tn += 1
+
+            # Metrik Hesaplamaları
+            precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+            recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+            f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
 
             precisions.append(precision)
             recalls.append(recall)
             f1_scores.append(f1)
 
         if valid_users == 0:
-            print(f"Değerlendirme yapılamadı: Yeterli etkileşimi (en az {min_liked_interactions} beğeni) olan kullanıcı bulunamadı.")
+            print(f"Değerlendirme yapılamadı: Yeterli etkileşimi (en az {min_total_interactions} beğeni) olan kullanıcı bulunamadı.")
             return
 
         avg_precision = np.mean(precisions)
         avg_recall = np.mean(recalls)
         avg_f1 = np.mean(f1_scores)
 
-        print(f"--- DEĞERLENDİRME SONUÇLARI (Top-{top_k}, Ceza Çarpanı: {penalty_weight}) ---")
+        print(f"--- SINIFLANDIRMA DEĞERLENDİRMESİ (Threshold: {threshold}, Ceza Çarpanı: {penalty_weight}) ---")
         print(f"Değerlendirilen Kullanıcı Sayısı: {valid_users}")
-        print(f"Ortalama Precision@{top_k}: {avg_precision:.4f} (Önerilen 10 parfümden ortalama {avg_precision*10:.2f} tanesi tuttu)")
-        print(f"Ortalama Recall@{top_k}   : {avg_recall:.4f} (Kullanıcının sevebileceği test parfümlerinin %{avg_recall*100:.1f}'i yakalandı)")
-        print(f"Ortalama F1-Score@{top_k}: {avg_f1:.4f}\n")
+        print(f"Ortalama Precision (Kesinlik): {avg_precision:.4f} (Önerilen/Like dediklerinin %{avg_precision*100:.1f} i tuttu)")
+        print(f"Ortalama Recall (Kapsama): {avg_recall:.4f} (Kullanıcının sevdiklerinin %{avg_recall*100:.1f}'i yakalandı)")
+        print(f"Ortalama F1-Score          : {avg_f1:.4f}\n")
 
 if __name__ == '__main__':
     CONN_STR = (
@@ -146,14 +165,14 @@ if __name__ == '__main__':
     evaluator = RecommenderEvaluator(CONN_STR)
     evaluator.load_data()
     
-    # 2. Farklı konfigürasyonlarla sistemi test et ve metrikleri karşılaştır
-    # "Dislike ceza çarpanını ne yaparsak algoritmanın başarsı artar?" şeklinde deneyler:
+    print("\n[Deney 1: Güvenli Liman (Eski Şampiyon)]")
+    evaluator.evaluate(threshold=0.25, min_total_interactions=10, penalty_weight=0.3)
+
+    print("\n[Deney 2: Yüksek Kesinlik (Daha Strict Eşik ve Ceza)]")
+    evaluator.evaluate(threshold=0.28, min_total_interactions=10, penalty_weight=0.4)
+
+    print("\n[Deney 3: Keşif Odaklı (Yumuşak Eşik ve Ceza - Yüksek Recall)]")
+    evaluator.evaluate(threshold=0.22, min_total_interactions=10, penalty_weight=0.2)
     
-    print("[Deney 1: Geniş Ağ (Top-50 Öneri ile)]")
-    evaluator.evaluate(top_k=50, min_liked_interactions=5, penalty_weight=0.5)
-
-    print("[Deney 2: Daha Geniş Ağ (Top-200 Öneri ile)]")
-    evaluator.evaluate(top_k=200, min_liked_interactions=5, penalty_weight=0.5)
-
-    print("[Deney 3: En Geniş Ağ (Top-500 Öneri ile)]")
-    evaluator.evaluate(top_k=500, min_liked_interactions=5, penalty_weight=0.5)
+    print("\n[Deney 4: Agresif Negatif Öğrenme (Sert Ceza)]")
+    evaluator.evaluate(threshold=0.25, min_total_interactions=10, penalty_weight=0.6)
