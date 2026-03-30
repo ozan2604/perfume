@@ -22,15 +22,39 @@ public class PerfumesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetPerfumes(int page = 1, int pageSize = 20)
+    public async Task<IActionResult> GetPerfumes(
+        int page = 1, 
+        int pageSize = 20,
+        string? gender = null,
+        string? country = null,
+        string? sortBy = null)
     {
         // 1. AsNoTracking() ile EF Core'un veriyi hafızada takip etmesini engelliyoruz (Sade Okuma hızlanır)
         // 2. Sadece arayüzde (UI) gereken ana bilgileri "Select" yardımıyla çekiyoruz.
         // BÖYLECE 256 boyutlu devasa "EmbeddingVector" gibi kolonlar veritabanından hiç gönderilmiyor! (10 KAT HIZLANMA)
         
-        var perfumes = await _context.Perfumes
-            .AsNoTracking()
-            .OrderBy(p => p.Name)
+        var query = _context.Perfumes.AsNoTracking();
+
+        if (!string.IsNullOrEmpty(gender))
+        {
+            query = query.Where(p => p.Gender == gender);
+        }
+
+        if (!string.IsNullOrEmpty(country))
+        {
+            query = query.Where(p => p.Country == country);
+        }
+
+        if (sortBy == "rating_desc")
+        {
+            query = query.OrderByDescending(p => p.RatingValue);
+        }
+        else
+        {
+            query = query.OrderBy(p => p.Name);
+        }
+
+        var perfumes = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(p => new 
@@ -40,6 +64,7 @@ public class PerfumesController : ControllerBase
                 p.Brand,
                 p.Url,
                 p.Gender,
+                p.Country,
                 Rating = p.RatingValue,
                 p.RatingCount,
                 p.MainAccord1,
@@ -50,6 +75,19 @@ public class PerfumesController : ControllerBase
             .ToListAsync();
 
         return Ok(perfumes);
+    }
+
+    [HttpGet("countries")]
+    public async Task<IActionResult> GetCountries()
+    {
+        var countries = await _context.Perfumes
+            .Where(p => !string.IsNullOrEmpty(p.Country))
+            .Select(p => p.Country)
+            .Distinct()
+            .OrderBy(c => c)
+            .ToListAsync();
+            
+        return Ok(countries);
     }
 
     [HttpGet("{id}")]
@@ -239,6 +277,19 @@ public class PerfumesController : ControllerBase
         return Ok(new { Count = count });
     }
 
+    [HttpGet("profile-summary")]
+    [Authorize]
+    public async Task<IActionResult> GetProfileSummary()
+    {
+        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+
+        var userId = Guid.Parse(userIdString);
+        var summary = await _recommendationService.GenerateUserProfileSummaryAsync(userId);
+        
+        return Ok(new { Summary = summary });
+    }
+
     [HttpGet("recommendations")]
     public async Task<IActionResult> GetRecommendations(int count = 10)
     {
@@ -248,7 +299,24 @@ public class PerfumesController : ControllerBase
         var userId = Guid.Parse(userIdString);
         var recommendations = await _recommendationService.GetRecommendationsAsync(userId, count);
 
-        return Ok(recommendations);
+        var result = recommendations.Select(r => new 
+        {
+            id = r.Perfume.Id,
+            name = r.Perfume.Name,
+            brand = r.Perfume.Brand,
+            gender = r.Perfume.Gender,
+            country = r.Perfume.Country,
+            rating = r.Perfume.RatingValue,
+            ratingCount = r.Perfume.RatingCount,
+            year = r.Perfume.Year,
+            mainAccord1 = r.Perfume.MainAccord1,
+            mainAccord2 = r.Perfume.MainAccord2,
+            mainAccord3 = r.Perfume.MainAccord3,
+            url = r.Perfume.Url,
+            explanation = r.Explanation
+        });
+
+        return Ok(result);
     }
 }
 

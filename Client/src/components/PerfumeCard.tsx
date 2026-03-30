@@ -37,8 +37,16 @@ const PerfumeCard: React.FC<PerfumeCardProps> = ({ perfume, initialLiked = null 
         <div className="details">
           {perfume.year && <span>{perfume.year}</span>}
           {perfume.gender && <span>{perfume.gender}</span>}
+          {perfume.country && <span className="country">🌍 {perfume.country}</span>}
           {perfume.rating && <span className="rating">⭐ {perfume.rating}</span>}
         </div>
+        
+        {perfume.explanation && (
+          <div className="perfume-explanation">
+            <span className="explanation-icon">💡</span>
+            <span className="explanation-text">{perfume.explanation}</span>
+          </div>
+        )}
       </div>
       <div className="perfume-actions-container">
         <div className="perfume-actions">

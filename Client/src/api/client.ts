@@ -21,11 +21,25 @@ export const login = (data: { email: string; password: string }) =>
   api.post<{ token: string; userId: string; name: string }>('/auth/login', data);
 
 // Perfumes
-export const getPerfumes = (page = 1, pageSize = 20) =>
-  api.get<Perfume[]>(`/perfumes?page=${page}&pageSize=${pageSize}`);
+export const getPerfumes = (page = 1, pageSize = 20, gender?: string, country?: string, sortBy?: string) => {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    pageSize: pageSize.toString(),
+  });
+  if (gender) params.append('gender', gender);
+  if (country) params.append('country', country);
+  if (sortBy) params.append('sortBy', sortBy);
+
+  return api.get<Perfume[]>(`/perfumes?${params.toString()}`);
+};
+
+export const getCountries = () => api.get<string[]>('/perfumes/countries');
 
 export const getRecommendations = (count = 10) =>
   api.get<Perfume[]>(`/perfumes/recommendations?count=${count}`);
+
+export const getProfileSummary = () =>
+  api.get<{ summary: string }>('/perfumes/profile-summary');
 
 export const getInteractions = () =>
   api.get<Record<string, boolean>>('/perfumes/interactions');
@@ -42,6 +56,7 @@ export interface Perfume {
   year?: number;
   country?: string;
   url?: string;
+  explanation?: string;
 }
 
 export interface MyInteraction {
