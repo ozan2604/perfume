@@ -16,7 +16,7 @@ const RecommendationsPage: React.FC = () => {
   const fetchRecommendations = async () => {
     setLoading(true);
     try {
-      const recRes = await getRecommendations(12);
+      const recRes = await getRecommendations(25);
       setRecommendations(recRes.data);
 
       try {
@@ -49,7 +49,7 @@ const RecommendationsPage: React.FC = () => {
 
   return (
     <div className="container">
-      {profileSummary && !loading && (
+      {profileSummary && !loading && Object.keys(interactions).length >= 10 && (
         <div className="profile-summary-banner">
           <div className="summary-icon">✨</div>
           <div className="summary-content">
@@ -61,10 +61,25 @@ const RecommendationsPage: React.FC = () => {
 
       {loading ? (
         <div className="loader">Öneriler hazırlanıyor...</div>
+      ) : Object.keys(interactions).length < 10 ? (
+        <div className="empty-state" style={{ padding: '4rem 2rem', textAlign: 'center', background: 'var(--card-bg)', borderRadius: '16px', border: '1px solid var(--border)', marginTop: '2rem' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔒</div>
+          <h2>Sana Özel Sayfası Kilitli</h2>
+          <p style={{ color: 'var(--text-muted)', marginTop: '1rem', fontSize: '1.1rem', maxWidth: '500px', margin: '1rem auto' }}>
+            Koku profilinin haritasını tam olarak çıkarabilmemiz ve sana en uygun eşleşmeleri sunabilmemiz için en az 10 parfüm değerlendirmelisin.
+          </p>
+          <div style={{ background: 'rgba(124, 58, 237, 0.1)', padding: '1rem', borderRadius: '12px', display: 'inline-block', color: 'var(--primary)', fontWeight: '600' }}>
+            Kalan Parfüm: {10 - Object.keys(interactions).length}
+          </div>
+          <br/>
+          <a href="/" className="action-btn" style={{ display: 'inline-block', marginTop: '2rem', padding: '0.75rem 2rem', background: 'var(--primary)', color: 'white', textDecoration: 'none', borderRadius: '12px' }}>
+            Ana Sayfaya Dön ve Keşfet
+          </a>
+        </div>
       ) : recommendations.length === 0 ? (
         <div className="empty-state">
           <h3>Henüz öneri yok.</h3>
-          <p>Sana özel öneriler oluşturabilmemiz için birkaç parfümü beğenmelisin.</p>
+          <p>Sistemde sana uygun bir eşleşme bulunamadı, farklı parfümler oylamayı dene.</p>
         </div>
       ) : (
         <div className="perfume-grid">

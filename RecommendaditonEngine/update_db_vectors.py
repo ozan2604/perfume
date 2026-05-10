@@ -22,7 +22,14 @@ def update_perfume_vectors():
     # Pandas ile veritabanındaki kolon isimlerini vectorizer.py'nin beklediği isimlere uyduralım
     df = df.rename(columns={
         'RatingValue': 'rating_value',
+        'RatingCount': 'rating_count',
         'Brand': 'brand',
+        'Gender': 'gender',
+        'Country': 'country',
+        'Year': 'year',
+        'TopNotes': 'top_notes',
+        'MiddleNotes': 'middle_notes',
+        'BaseNotes': 'base_notes',
         'MainAccord1': 'mainaccord1',
         'MainAccord2': 'mainaccord2',
         'MainAccord3': 'mainaccord3',
@@ -30,9 +37,9 @@ def update_perfume_vectors():
         'MainAccord5': 'mainaccord5'
     })
     
-    # 2. Vektörleri yeni 256 boyuta göre hesapla
-    print("256 Boyutlu yeni vektörler (Feature Engineering Pipeline) hesaplanıyor...")
-    pipeline = FeatureEngineeringPipeline(d_dimensions=256)
+    # 2. Vektörleri yeni 320 boyuta göre hesapla
+    print("320 Boyutlu yeni vektörler (Feature Engineering Pipeline) hesaplanıyor...")
+    pipeline = FeatureEngineeringPipeline(d_dimensions=320)
     embeddings = pipeline.fit_transform(df)
     
     # 3. Hesaplanan vektörleri DB'ye UPDATE ile yaz (Interactions bozulmasın diye Id sabit kalır)
@@ -56,7 +63,7 @@ def update_perfume_vectors():
         print(f"Güncellendi: {i + len(rows_to_update[i:i+batch_size])} / {len(rows_to_update)}")
         
     conn.close()
-    print("BÜTÜN PARFÜMLER 256 BOYUTA GÜNCELLENDİ!")
+    print("BÜTÜN PARFÜMLER 320 BOYUTA GÜNCELLENDİ!")
 
 if __name__ == "__main__":
     update_perfume_vectors()

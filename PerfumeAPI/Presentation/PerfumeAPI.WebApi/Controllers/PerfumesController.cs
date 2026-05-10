@@ -27,13 +27,22 @@ public class PerfumesController : ControllerBase
         int pageSize = 20,
         string? gender = null,
         string? country = null,
-        string? sortBy = null)
+        string? sortBy = null,
+        string? search = null)
     {
         // 1. AsNoTracking() ile EF Core'un veriyi hafızada takip etmesini engelliyoruz (Sade Okuma hızlanır)
         // 2. Sadece arayüzde (UI) gereken ana bilgileri "Select" yardımıyla çekiyoruz.
         // BÖYLECE 256 boyutlu devasa "EmbeddingVector" gibi kolonlar veritabanından hiç gönderilmiyor! (10 KAT HIZLANMA)
         
         var query = _context.Perfumes.AsNoTracking();
+
+        if (!string.IsNullOrEmpty(search))
+        {
+            var searchLower = search.ToLower();
+            query = query.Where(p => 
+                p.Name.ToLower().Contains(searchLower) || 
+                (p.Brand != null && p.Brand.ToLower().Contains(searchLower)));
+        }
 
         if (!string.IsNullOrEmpty(gender))
         {
@@ -49,12 +58,24 @@ public class PerfumesController : ControllerBase
         {
             query = query.OrderByDescending(p => p.RatingValue);
         }
+        else if (sortBy == "price_asc")
+        {
+            query = query.OrderBy(p => p.Price);
+        }
+        else if (sortBy == "price_desc")
+        {
+            query = query.OrderByDescending(p => p.Price);
+        }
+        else if (sortBy == "a-z")
+        {
+            query = query.OrderBy(p => p.Name);
+        }
         else
         {
             query = query.OrderBy(p => p.Name);
         }
 
-        var perfumes = await query
+         var perfumes = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(p => new 
@@ -63,6 +84,7 @@ public class PerfumesController : ControllerBase
                 p.Name,
                 p.Brand,
                 p.Url,
+                p.ImageUrl,
                 p.Gender,
                 p.Country,
                 Rating = p.RatingValue,
@@ -70,7 +92,8 @@ public class PerfumesController : ControllerBase
                 p.MainAccord1,
                 p.MainAccord2,
                 p.MainAccord3,
-                p.TopNotes
+                p.TopNotes,
+                p.Price
             })
             .ToListAsync();
 
@@ -81,6 +104,7 @@ public class PerfumesController : ControllerBase
     public async Task<IActionResult> GetCountries()
     {
         var countries = await _context.Perfumes
+            .AsNoTracking()
             .Where(p => !string.IsNullOrEmpty(p.Country))
             .Select(p => p.Country)
             .Distinct()
@@ -217,6 +241,7 @@ public class PerfumesController : ControllerBase
 
         var userId = Guid.Parse(userIdString);
         var interactions = await _context.UserPerfumeInteractions
+            .AsNoTracking()
             .Where(i => i.UserId == userId)
             .Select(i => new { perfumeId = i.PerfumeId.ToString(), isLiked = i.IsLiked })
             .ToListAsync();
@@ -248,13 +273,15 @@ public class PerfumesController : ControllerBase
                     i.Perfume.Name,
                     i.Perfume.Brand,
                     i.Perfume.Url,
+                    i.Perfume.ImageUrl,
                     i.Perfume.Gender,
                     Rating = i.Perfume.RatingValue,
                     i.Perfume.RatingCount,
                     i.Perfume.MainAccord1,
                     i.Perfume.MainAccord2,
                     i.Perfume.MainAccord3,
-                    i.Perfume.TopNotes
+                    i.Perfume.TopNotes,
+                    i.Perfume.Price
                 },
                 IsLiked = i.IsLiked,
                 InteractionDate = i.InteractionDate
@@ -272,7 +299,7 @@ public class PerfumesController : ControllerBase
         if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
 
         var userId = Guid.Parse(userIdString);
-        var count = await _context.UserPerfumeInteractions.CountAsync(i => i.UserId == userId);
+        var count = await _context.UserPerfumeInteractions.AsNoTracking().CountAsync(i => i.UserId == userId);
 
         return Ok(new { Count = count });
     }
@@ -291,7 +318,7 @@ public class PerfumesController : ControllerBase
     }
 
     [HttpGet("recommendations")]
-    public async Task<IActionResult> GetRecommendations(int count = 10)
+    public async Task<IActionResult> GetRecommendations(int count = 25)
     {
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
@@ -313,6 +340,8 @@ public class PerfumesController : ControllerBase
             mainAccord2 = r.Perfume.MainAccord2,
             mainAccord3 = r.Perfume.MainAccord3,
             url = r.Perfume.Url,
+            imageUrl = r.Perfume.ImageUrl,
+            price = r.Perfume.Price,
             explanation = r.Explanation
         });
 

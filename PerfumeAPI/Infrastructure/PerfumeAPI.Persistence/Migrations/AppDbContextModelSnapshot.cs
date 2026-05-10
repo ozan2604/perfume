@@ -247,15 +247,18 @@ namespace PerfumeAPI.Persistence.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Brand")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Country")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("EmbeddingVector")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Gender")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ImageUrl")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("MainAccord1")
@@ -292,6 +295,9 @@ namespace PerfumeAPI.Persistence.Migrations
                     b.Property<string>("Perfumer4")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<decimal?>("Price")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int?>("RatingCount")
                         .HasColumnType("int");
 
@@ -308,6 +314,16 @@ namespace PerfumeAPI.Persistence.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Brand");
+
+                    b.HasIndex("Country");
+
+                    b.HasIndex("Gender");
+
+                    b.HasIndex("Price");
+
+                    b.HasIndex("RatingValue");
 
                     b.ToTable("Perfumes");
                 });
@@ -345,6 +361,8 @@ namespace PerfumeAPI.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("PerfumeId");
+
+                    b.HasIndex("UserId", "InteractionDate");
 
                     b.HasIndex("UserId", "PerfumeId")
                         .IsUnique();

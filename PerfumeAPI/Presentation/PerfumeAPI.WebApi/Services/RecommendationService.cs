@@ -45,11 +45,12 @@ public class RecommendationService
 
     /// <summary>
     /// Calculates the user's preference vector based on liked and disliked perfumes.
-    /// Logic: Average(LikedVectors) - 0.5 * Average(DislikedVectors)
+    /// Logic: Average(LikedVectors) - 0.1 * Average(DislikedVectors)
     /// </summary>
     public async Task UpdateUserVectorAsync(Guid userId)
     {
         var interactions = await _context.UserPerfumeInteractions
+            .AsNoTracking()
             .Where(i => i.UserId == userId)
             .Include(i => i.Perfume)
             .ToListAsync();
@@ -68,18 +69,18 @@ public class RecommendationService
 
         if (!likedVectors.Any() && !dislikedVectors.Any()) return;
 
-        float[] resultVector = new float[256]; // Assuming 256 dimensions from Python SVD
+        float[] resultVector = new float[320]; // Assuming 320 dimensions from Python SVD
 
         if (likedVectors.Any())
         {
             float[] avgLiked = CalculateAverage(likedVectors);
-            for (int i = 0; i < 256; i++) resultVector[i] += avgLiked[i];
+            for (int i = 0; i < 320; i++) resultVector[i] += avgLiked[i];
         }
 
         if (dislikedVectors.Any())
         {
             float[] avgDisliked = CalculateAverage(dislikedVectors);
-            for (int i = 0; i < 256; i++) resultVector[i] -= avgDisliked[i] * 0.5f; // Penalty weight
+            for (int i = 0; i < 320; i++) resultVector[i] -= avgDisliked[i] * 0.1f; // Penalty weight
         }
 
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
@@ -92,22 +93,24 @@ public class RecommendationService
 
     public async Task<List<RecommendationDto>> GetRecommendationsAsync(Guid userId, int count = 10)
     {
+        var interactions = await _context.UserPerfumeInteractions
+            .AsNoTracking()
+            .Where(i => i.UserId == userId)
+            .Include(i => i.Perfume)
+            .ToListAsync();
+
         var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
-        if (user == null || string.IsNullOrEmpty(user.UserVector))
+        
+        // Eğer 10 etkileşimden azsa veya profil vektörü henüz oluşmadıysa boş dön
+        if (user == null || string.IsNullOrEmpty(user.UserVector) || interactions.Count < 10)
         {
-            var randomPerfumes = await _context.Perfumes.AsNoTracking().OrderBy(p => Guid.NewGuid()).Take(count).ToListAsync();
-            return randomPerfumes.Select(p => new RecommendationDto { Perfume = p, Explanation = "Yeni ürünler keşfetmen için senin için rastgele seçtik." }).ToList();
+            return new List<RecommendationDto>();
         }
 
         var userVec = JsonSerializer.Deserialize<float[]>(user.UserVector!)!;
         
         var allVectors = await GetAllPerfumeVectorsAsync();
 
-        var interactions = await _context.UserPerfumeInteractions
-            .Where(i => i.UserId == userId)
-            .Include(i => i.Perfume)
-            .ToListAsync();
-            
         var interactedIds = interactions.Select(i => i.PerfumeId).ToList();
         var interactedSet = new HashSet<Guid>(interactedIds);
 
@@ -166,12 +169,14 @@ public class RecommendationService
                 var matchAccords = new[] { bestMatch.Perfume.MainAccord1, bestMatch.Perfume.MainAccord2, bestMatch.Perfume.MainAccord3 }.Where(a => !string.IsNullOrEmpty(a)).ToList();
                 var sharedCount = recAccordsList.Intersect(matchAccords).ToList();
 
+                var formattedName = FormatName(bestMatch.Perfume.Name);
+
                 if (sharedCount.Any())
                 {
-                    return $"Beğendiğin '{bestMatch.Perfume.Name}' parfümüne çok benziyor; özellikle {string.Join(" ve ", sharedCount.Take(2))} dokuları bu parfümde de hakim.";
+                    return $"Beğendiğin '{formattedName}' parfümüne çok benziyor; özellikle {string.Join(" ve ", sharedCount.Take(2))} dokuları bu parfümde de hakim.";
                 }
 
-                return $"Beğendiğin '{bestMatch.Perfume.Name}' parfümüne çok benziyor.";
+                return $"Beğendiğin '{formattedName}' parfümüne çok benziyor.";
             }
         }
 
@@ -197,6 +202,18 @@ public class RecommendationService
         }
 
         return "Parfüm profilinizle yüksek oranda eşleşiyor.";
+    }
+
+    private string FormatName(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return name;
+        var words = name.Replace("-", " ").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        for (int i = 0; i < words.Length; i++)
+        {
+            if (words[i].Length > 0)
+                words[i] = char.ToUpper(words[i][0]) + words[i].Substring(1);
+        }
+        return string.Join(" ", words);
     }
 
     private float[] CalculateAverage(List<float[]> vectors)
@@ -233,8 +250,8 @@ public class RecommendationService
             .Include(i => i.Perfume)
             .ToListAsync();
 
-        if (interactions.Count < 3) 
-            return "Koku profilinin haritasını çıkarabilmemiz için biraz daha parfüm değerlendirmelisin. Keşfetmeye devam et!";
+        if (interactions.Count < 10) 
+            return $"Koku profilinin haritasını tam çıkarabilmemiz için en az 10 parfüm değerlendirmelisin. Keşfetmeye devam et! (Şu anki: {interactions.Count}/10)";
 
         var liked = interactions.Where(i => i.IsLiked).Select(i => i.Perfume).ToList();
         var disliked = interactions.Where(i => !i.IsLiked).Select(i => i.Perfume).ToList();

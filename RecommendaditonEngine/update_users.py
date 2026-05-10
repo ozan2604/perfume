@@ -18,16 +18,16 @@ def update_all_users():
     
     conn.close()
     
-    print(f"Toplam {len(user_ids)} kullanıcı bulundu. Profil vektörleri 256 Boyuta güncelleniyor...")
+    print(f"Toplam {len(user_ids)} kullanıcı bulundu. Profil vektörleri 320 Boyuta güncelleniyor...")
     
     vectorizer = UserVectorizer(conn_str)
     basarili = 0
     for uid in user_ids:
-        # Update user vector metodu artık src/recommendation/user_vectorizer.py dosyasında '256' kullanıyor.
+        # Update user vector metodu artık src/recommendation/user_vectorizer.py dosyasında '320' kullanıyor.
         if vectorizer.update_user_vector(uid):
             basarili += 1
             
-    print(f"\n{basarili}/{len(user_ids)} kullanıcının vektörleri başarıyla 256D mimarisine güncellendi! (Kalan {len(user_ids)-basarili} kullanıcının hiçbir Like/Dislike etkileşimi olmadığı için null bırakıldı.)")
+    print(f"\n{basarili}/{len(user_ids)} kullanıcının vektörleri başarıyla 320D mimarisine güncellendi! (Kalan {len(user_ids)-basarili} kullanıcının hiçbir Like/Dislike etkileşimi olmadığı için null bırakıldı.)")
 
 if __name__ == "__main__":
     update_all_users()

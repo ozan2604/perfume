@@ -100,7 +100,7 @@ class RecommenderEvaluator:
             train_liked_vecs = [self.perfume_vectors[pid] for pid in train_liked]
             train_disliked_vecs = [self.perfume_vectors[pid] for pid in train_disliked]
 
-            user_vector = np.zeros(256, dtype=np.float32)
+            user_vector = np.zeros(320, dtype=np.float32)
             if train_liked_vecs:
                 user_vector += np.mean(train_liked_vecs, axis=0)
             if train_disliked_vecs:
@@ -147,7 +147,7 @@ class RecommenderEvaluator:
         avg_recall = np.mean(recalls)
         avg_f1 = np.mean(f1_scores)
 
-        print(f"--- SINIFLANDIRMA DEĞERLENDİRMESİ (Threshold: {threshold}, Ceza Çarpanı: {penalty_weight}) ---")
+        print(f"--- SINIFLANDIRMA DEĞERLENDİRMESİ (Threshold: {threshold}, Ceza Çarpanı: {penalty_weight}, Min Etkileşim: {min_total_interactions}) ---")
         print(f"Değerlendirilen Kullanıcı Sayısı: {valid_users}")
         print(f"Ortalama Precision (Kesinlik): {avg_precision:.4f} (Önerilen/Like dediklerinin %{avg_precision*100:.1f} i tuttu)")
         print(f"Ortalama Recall (Kapsama): {avg_recall:.4f} (Kullanıcının sevdiklerinin %{avg_recall*100:.1f}'i yakalandı)")
@@ -165,14 +165,112 @@ if __name__ == '__main__':
     evaluator = RecommenderEvaluator(CONN_STR)
     evaluator.load_data()
     
-    print("\n[Deney 1: Güvenli Liman (Eski Şampiyon)]")
-    evaluator.evaluate(threshold=0.25, min_total_interactions=10, penalty_weight=0.3)
+    evaluator.evaluate(threshold=0.5, min_total_interactions=5, penalty_weight=0.1)
 
-    print("\n[Deney 2: Yüksek Kesinlik (Daha Strict Eşik ve Ceza)]")
-    evaluator.evaluate(threshold=0.28, min_total_interactions=10, penalty_weight=0.4)
+    evaluator.evaluate(threshold=0.5, min_total_interactions=5, penalty_weight=0.3)
 
-    print("\n[Deney 3: Keşif Odaklı (Yumuşak Eşik ve Ceza - Yüksek Recall)]")
-    evaluator.evaluate(threshold=0.22, min_total_interactions=10, penalty_weight=0.2)
+    evaluator.evaluate(threshold=0.5, min_total_interactions=5, penalty_weight=0.5)
     
-    print("\n[Deney 4: Agresif Negatif Öğrenme (Sert Ceza)]")
-    evaluator.evaluate(threshold=0.25, min_total_interactions=10, penalty_weight=0.6)
+    evaluator.evaluate(threshold=0.5, min_total_interactions=5, penalty_weight=0.7)
+
+
+
+    evaluator.evaluate(threshold=0.5, min_total_interactions=10, penalty_weight=0.1)
+
+    evaluator.evaluate(threshold=0.5, min_total_interactions=10, penalty_weight=0.3)
+
+    evaluator.evaluate(threshold=0.5, min_total_interactions=10, penalty_weight=0.5)
+    
+    evaluator.evaluate(threshold=0.5, min_total_interactions=10, penalty_weight=0.7)
+
+
+    evaluator.evaluate(threshold=0.5, min_total_interactions=30, penalty_weight=0.1)
+
+    evaluator.evaluate(threshold=0.5, min_total_interactions=30, penalty_weight=0.3)
+
+    evaluator.evaluate(threshold=0.5, min_total_interactions=30, penalty_weight=0.5)
+    
+    evaluator.evaluate(threshold=0.5, min_total_interactions=30, penalty_weight=0.7)
+
+
+
+    evaluator.evaluate(threshold=0.6, min_total_interactions=5, penalty_weight=0.1)
+
+    evaluator.evaluate(threshold=0.6, min_total_interactions=5, penalty_weight=0.3)
+
+    evaluator.evaluate(threshold=0.6, min_total_interactions=5, penalty_weight=0.5)
+    
+    evaluator.evaluate(threshold=0.6, min_total_interactions=5, penalty_weight=0.7)
+
+
+    evaluator.evaluate(threshold=0.6, min_total_interactions=10, penalty_weight=0.1)
+
+    evaluator.evaluate(threshold=0.6, min_total_interactions=10, penalty_weight=0.3)
+
+    evaluator.evaluate(threshold=0.6, min_total_interactions=10, penalty_weight=0.5)
+    
+    evaluator.evaluate(threshold=0.6, min_total_interactions=10, penalty_weight=0.7)
+
+
+    evaluator.evaluate(threshold=0.6, min_total_interactions=30, penalty_weight=0.1)
+
+    evaluator.evaluate(threshold=0.6, min_total_interactions=30, penalty_weight=0.3)
+
+    evaluator.evaluate(threshold=0.6, min_total_interactions=30, penalty_weight=0.5)
+    
+    evaluator.evaluate(threshold=0.6, min_total_interactions=30, penalty_weight=0.7)
+
+
+    evaluator.evaluate(threshold=0.7, min_total_interactions=5, penalty_weight=0.1)
+
+    evaluator.evaluate(threshold=0.7, min_total_interactions=5, penalty_weight=0.3)
+
+    evaluator.evaluate(threshold=0.7, min_total_interactions=5, penalty_weight=0.5)
+    
+    evaluator.evaluate(threshold=0.7, min_total_interactions=5, penalty_weight=0.7)
+
+
+    evaluator.evaluate(threshold=0.7, min_total_interactions=10, penalty_weight=0.1)
+
+    evaluator.evaluate(threshold=0.7, min_total_interactions=10, penalty_weight=0.3)
+
+    evaluator.evaluate(threshold=0.7, min_total_interactions=10, penalty_weight=0.5)
+    
+    evaluator.evaluate(threshold=0.7, min_total_interactions=10, penalty_weight=0.7)
+
+
+    evaluator.evaluate(threshold=0.7, min_total_interactions=30, penalty_weight=0.1)
+
+    evaluator.evaluate(threshold=0.7, min_total_interactions=30, penalty_weight=0.3)
+
+    evaluator.evaluate(threshold=0.7, min_total_interactions=30, penalty_weight=0.5)
+    
+    evaluator.evaluate(threshold=0.7, min_total_interactions=30, penalty_weight=0.7)
+
+
+    evaluator.evaluate(threshold=0.8, min_total_interactions=5, penalty_weight=0.1)
+
+    evaluator.evaluate(threshold=0.8, min_total_interactions=5, penalty_weight=0.3)
+
+    evaluator.evaluate(threshold=0.8, min_total_interactions=5, penalty_weight=0.5)
+    
+    evaluator.evaluate(threshold=0.8, min_total_interactions=5, penalty_weight=0.7)
+
+
+    evaluator.evaluate(threshold=0.8, min_total_interactions=10, penalty_weight=0.1)
+
+    evaluator.evaluate(threshold=0.8, min_total_interactions=10, penalty_weight=0.3)
+
+    evaluator.evaluate(threshold=0.8, min_total_interactions=10, penalty_weight=0.5)
+    
+    evaluator.evaluate(threshold=0.8, min_total_interactions=10, penalty_weight=0.7)
+
+
+    evaluator.evaluate(threshold=0.8, min_total_interactions=30, penalty_weight=0.1)
+
+    evaluator.evaluate(threshold=0.8, min_total_interactions=30, penalty_weight=0.3)
+
+    evaluator.evaluate(threshold=0.8, min_total_interactions=30, penalty_weight=0.5)
+    
+    evaluator.evaluate(threshold=0.8, min_total_interactions=30, penalty_weight=0.7)
+

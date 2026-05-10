@@ -24,6 +24,15 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, Guid>
         .HasIndex(u => new { u.UserId, u.PerfumeId })
         .IsUnique();
 
+        modelBuilder.Entity<UserPerfumeInteraction>()
+        .HasIndex(u => new { u.UserId, u.InteractionDate });
+
+        modelBuilder.Entity<Perfume>().HasIndex(p => p.Country);
+        modelBuilder.Entity<Perfume>().HasIndex(p => p.Gender);
+        modelBuilder.Entity<Perfume>().HasIndex(p => p.Brand);
+        modelBuilder.Entity<Perfume>().HasIndex(p => p.RatingValue);
+        modelBuilder.Entity<Perfume>().HasIndex(p => p.Price);
+
         
         modelBuilder.Entity<UserPerfumeInteraction>()
             .HasOne(u => u.User)

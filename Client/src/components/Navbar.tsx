@@ -1,10 +1,21 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { useState, useEffect } from 'react';
 
 const Navbar: React.FC = () => {
   const { token, name, logout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prevTheme) => (prevTheme === 'dark' ? 'light' : 'dark'));
+  };
 
   const handleLogout = () => {
     logout();
@@ -20,6 +31,9 @@ const Navbar: React.FC = () => {
           ✨ PerfumeAI
         </Link>
         <div className="navbar-links">
+          <button onClick={toggleTheme} className="theme-toggle-btn">
+            {theme === 'dark' ? '☀️ Açık Mod' : '🌙 Karanlık Mod'}
+          </button>
           {token ? (
             <>
               <Link to="/" className={`navbar-link ${isActive('/')}`}>Ana Sayfa</Link>

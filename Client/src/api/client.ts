@@ -21,7 +21,7 @@ export const login = (data: { email: string; password: string }) =>
   api.post<{ token: string; userId: string; name: string }>('/auth/login', data);
 
 // Perfumes
-export const getPerfumes = (page = 1, pageSize = 20, gender?: string, country?: string, sortBy?: string) => {
+export const getPerfumes = (page = 1, pageSize = 20, gender?: string, country?: string, sortBy?: string, search?: string) => {
   const params = new URLSearchParams({
     page: page.toString(),
     pageSize: pageSize.toString(),
@@ -29,6 +29,7 @@ export const getPerfumes = (page = 1, pageSize = 20, gender?: string, country?: 
   if (gender) params.append('gender', gender);
   if (country) params.append('country', country);
   if (sortBy) params.append('sortBy', sortBy);
+  if (search) params.append('search', search);
 
   return api.get<Perfume[]>(`/perfumes?${params.toString()}`);
 };
@@ -56,7 +57,9 @@ export interface Perfume {
   year?: number;
   country?: string;
   url?: string;
+  imageUrl?: string;
   explanation?: string;
+  price?: number;
 }
 
 export interface MyInteraction {

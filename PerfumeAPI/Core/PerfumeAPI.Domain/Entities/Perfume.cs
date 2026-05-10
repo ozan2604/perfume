@@ -5,12 +5,14 @@ public class Perfume
     public Guid Id { get; set; }
     public string? Url { get; set; }
     public string Name { get; set; } = string.Empty;
+    public string? ImageUrl { get; set; }
     public string? Brand { get; set; }
     public string? Country { get; set; }
     public string? Gender { get; set; }
     public double? RatingValue { get; set; }
     public int? RatingCount { get; set; }
     public int? Year { get; set; }
+    public decimal? Price { get; set; }
     
     public string? TopNotes { get; set; }
     public string? MiddleNotes { get; set; }
