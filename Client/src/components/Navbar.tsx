@@ -28,7 +28,7 @@ const Navbar: React.FC = () => {
     <nav className="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-logo">
-          ✨ PerfumeAI
+          ✨ ParfumeMatch
         </Link>
         <div className="navbar-links">
           <button onClick={toggleTheme} className="theme-toggle-btn">

@@ -39,6 +39,7 @@ class RecommenderEvaluator:
             perfume_id = str(row[1]).lower()
             if perfume_id in self.perfume_vectors:
                 self.user_interactions[user_id].append({
+                self.user_interactions[user_id].append({
                     'PerfumeId': perfume_id,
                     'IsLiked': bool(row[2])
                 })

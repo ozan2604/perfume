@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Numerics;
 using Microsoft.EntityFrameworkCore;
 using PerfumeAPI.Domain.Entities;
 using PerfumeAPI.Domain.Entities.Identity;
@@ -20,6 +21,11 @@ public class RecommendationService
         _cache = cache;
     }
 
+    public async Task WarmupCacheAsync()
+    {
+        await GetAllPerfumeVectorsAsync();
+    }
+
     // JSON Parse işlemi C#'ta çok ağırdır (24.000 veri için saniyeler alır).
     // Bu metod tüm vektörleri 1 kere çekip RAM'e atar. Sonraki tüm kullanıcılarda 1 milisaniyede gelir.
     private async Task<Dictionary<Guid, float[]>> GetAllPerfumeVectorsAsync()
@@ -32,10 +38,13 @@ public class RecommendationService
                 .Select(p => new { p.Id, p.EmbeddingVector }) // Devasa satırları çekmekten kurtarır
                 .ToListAsync();
 
-            vectors = dbPerfumes.ToDictionary(
-                p => p.Id,
-                p => JsonSerializer.Deserialize<float[]>(p.EmbeddingVector!)!
-            );
+            // Parallelize the heavy JSON deserialization
+            vectors = dbPerfumes
+                .AsParallel()
+                .ToDictionary(
+                    p => p.Id,
+                    p => JsonSerializer.Deserialize<float[]>(p.EmbeddingVector!)!
+                );
 
             // 24 saat RAM'de tut
             _cache.Set(VectorsCacheKey, vectors, TimeSpan.FromHours(24)); 
@@ -52,19 +61,21 @@ public class RecommendationService
         var interactions = await _context.UserPerfumeInteractions
             .AsNoTracking()
             .Where(i => i.UserId == userId)
-            .Include(i => i.Perfume)
+            .Select(i => new { i.PerfumeId, i.IsLiked })
             .ToListAsync();
 
         if (!interactions.Any()) return;
 
+        var allVectors = await GetAllPerfumeVectorsAsync();
+
         var likedVectors = interactions
-            .Where(i => i.IsLiked && !string.IsNullOrEmpty(i.Perfume.EmbeddingVector))
-            .Select(i => JsonSerializer.Deserialize<float[]>(i.Perfume.EmbeddingVector!)!)
+            .Where(i => i.IsLiked && allVectors.ContainsKey(i.PerfumeId))
+            .Select(i => allVectors[i.PerfumeId])
             .ToList();
 
         var dislikedVectors = interactions
-            .Where(i => !i.IsLiked && !string.IsNullOrEmpty(i.Perfume.EmbeddingVector))
-            .Select(i => JsonSerializer.Deserialize<float[]>(i.Perfume.EmbeddingVector!)!)
+            .Where(i => !i.IsLiked && allVectors.ContainsKey(i.PerfumeId))
+            .Select(i => allVectors[i.PerfumeId])
             .ToList();
 
         if (!likedVectors.Any() && !dislikedVectors.Any()) return;
@@ -93,11 +104,33 @@ public class RecommendationService
 
     public async Task<List<RecommendationDto>> GetRecommendationsAsync(Guid userId, int count = 10)
     {
-        var interactions = await _context.UserPerfumeInteractions
+        var interactionsRaw = await _context.UserPerfumeInteractions
             .AsNoTracking()
             .Where(i => i.UserId == userId)
-            .Include(i => i.Perfume)
+            .Select(i => new 
+            { 
+                i.PerfumeId, 
+                i.IsLiked,
+                i.Perfume.Name,
+                i.Perfume.MainAccord1,
+                i.Perfume.MainAccord2,
+                i.Perfume.MainAccord3
+            })
             .ToListAsync();
+
+        var interactions = interactionsRaw.Select(i => new
+        {
+            i.PerfumeId,
+            i.IsLiked,
+            Perfume = new Perfume
+            {
+                Id = i.PerfumeId,
+                Name = i.Name,
+                MainAccord1 = i.MainAccord1,
+                MainAccord2 = i.MainAccord2,
+                MainAccord3 = i.MainAccord3
+            }
+        }).ToList();
 
         var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
         
@@ -117,6 +150,7 @@ public class RecommendationService
         var likedPerfumes = interactions.Where(i => i.IsLiked).Select(i => i.Perfume).ToList();
 
         var topRecommendedIds = allVectors
+            .AsParallel()
             .Where(kvp => !interactedSet.Contains(kvp.Key))
             .Select(kvp => new 
             {
@@ -132,6 +166,23 @@ public class RecommendationService
         var recommendedPerfumes = await _context.Perfumes
             .AsNoTracking()
             .Where(p => recommendedIdsList.Contains(p.Id))
+            .Select(p => new Perfume
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Brand = p.Brand,
+                Url = p.Url,
+                ImageUrl = p.ImageUrl,
+                Gender = p.Gender,
+                Country = p.Country,
+                RatingValue = p.RatingValue,
+                RatingCount = p.RatingCount,
+                MainAccord1 = p.MainAccord1,
+                MainAccord2 = p.MainAccord2,
+                MainAccord3 = p.MainAccord3,
+                TopNotes = p.TopNotes,
+                Price = p.Price
+            })
             .ToListAsync();
 
         var result = new List<RecommendationDto>();
@@ -230,31 +281,82 @@ public class RecommendationService
 
     private float CosineSimilarity(float[] vecA, float[] vecB)
     {
-        float dotProduct = 0;
-        float magA = 0;
-        float magB = 0;
-        for (int i = 0; i < vecA.Length; i++)
+        if (vecA.Length != vecB.Length) return 0;
+        
+        int length = vecA.Length;
+        int vectorSize = Vector<float>.Count;
+        int i = 0;
+
+        Vector<float> vDot = Vector<float>.Zero;
+        Vector<float> vMagA = Vector<float>.Zero;
+        Vector<float> vMagB = Vector<float>.Zero;
+
+        while (i <= length - vectorSize)
+        {
+            var va = new Vector<float>(vecA, i);
+            var vb = new Vector<float>(vecB, i);
+            vDot += va * vb;
+            vMagA += va * va;
+            vMagB += vb * vb;
+            i += vectorSize;
+        }
+
+        float dotProduct = Vector.Dot(vDot, Vector<float>.One);
+        float magA = Vector.Dot(vMagA, Vector<float>.One);
+        float magB = Vector.Dot(vMagB, Vector<float>.One);
+
+        for (; i < length; i++)
         {
             dotProduct += vecA[i] * vecB[i];
             magA += vecA[i] * vecA[i];
             magB += vecB[i] * vecB[i];
         }
+
         float mag = (float)(Math.Sqrt(magA) * Math.Sqrt(magB));
         return mag == 0 ? 0 : dotProduct / mag;
     }
 
     public async Task<string> GenerateUserProfileSummaryAsync(Guid userId)
     {
-        var interactions = await _context.UserPerfumeInteractions
+        var interactionsRaw = await _context.UserPerfumeInteractions
+            .AsNoTracking()
             .Where(i => i.UserId == userId)
-            .Include(i => i.Perfume)
+            .Select(i => new 
+            {
+                i.IsLiked,
+                i.Perfume.Id,
+                i.Perfume.RatingValue,
+                i.Perfume.Year,
+                i.Perfume.Gender,
+                i.Perfume.Country,
+                i.Perfume.MainAccord1,
+                i.Perfume.MainAccord2,
+                i.Perfume.MainAccord3
+            })
             .ToListAsync();
 
-        if (interactions.Count < 10) 
-            return $"Koku profilinin haritasını tam çıkarabilmemiz için en az 10 parfüm değerlendirmelisin. Keşfetmeye devam et! (Şu anki: {interactions.Count}/10)";
+        if (interactionsRaw.Count < 10) 
+            return $"Koku profilinin haritasını tam çıkarabilmemiz için en az 10 parfüm değerlendirmelisin. Keşfetmeye devam et! (Şu anki: {interactionsRaw.Count}/10)";
 
-        var liked = interactions.Where(i => i.IsLiked).Select(i => i.Perfume).ToList();
-        var disliked = interactions.Where(i => !i.IsLiked).Select(i => i.Perfume).ToList();
+        var liked = interactionsRaw.Where(i => i.IsLiked).Select(i => new Perfume 
+        { 
+            Id = i.Id, 
+            RatingValue = i.RatingValue, 
+            Year = i.Year, 
+            Gender = i.Gender, 
+            Country = i.Country, 
+            MainAccord1 = i.MainAccord1, 
+            MainAccord2 = i.MainAccord2, 
+            MainAccord3 = i.MainAccord3 
+        }).ToList();
+        
+        var disliked = interactionsRaw.Where(i => !i.IsLiked).Select(i => new Perfume 
+        { 
+            Id = i.Id, 
+            MainAccord1 = i.MainAccord1, 
+            MainAccord2 = i.MainAccord2, 
+            MainAccord3 = i.MainAccord3 
+        }).ToList();
 
         if (!liked.Any())
             return "Şu ana kadar tarzını yansıtacak o 'imza' kokuları bulamamışız gibi görünüyor. Belki biraz daha cesur notalar denemelisin.";
